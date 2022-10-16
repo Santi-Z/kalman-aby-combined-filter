@@ -6,7 +6,7 @@ import java.util.Random;
 import java.lang.Math;
 import java.util.ArrayList;
 
-public class abyFilter {
+public class CombinedFilter {
     public static double accelTrueInput, accelEstimateInput, measurementMaxRandDiffInput, measurementVarianceInput, placingMaxRandDiffInput, placingVarianceInput;
     public static double accelTrue, velocityTrue, positionTrue;
     public static double accelEstimate, velocityEstimate, positionEstimate;
