@@ -1,6 +1,5 @@
 import java.util.Random;
 import java.lang.Math;
-import java.util.ArrayList;
 
 public class CombinedFilter {
     public static double accelTrueInput, accelEstimateInput, measurementMaxRandDiffInput, measurementVarianceInput, placingMaxRandDiffInput, placingVarianceInput;

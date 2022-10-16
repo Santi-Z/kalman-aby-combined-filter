@@ -6,13 +6,13 @@ import java.util.Random;
 import java.lang.Math;
 import java.util.ArrayList;
 
-public class CombinedFilter {
+public class CombinedFilterRecord {
     public static double accelTrueInput, accelEstimateInput, measurementMaxRandDiffInput, measurementVarianceInput, placingMaxRandDiffInput, placingVarianceInput;
     public static double accelTrue, velocityTrue, positionTrue;
     public static double accelEstimate, velocityEstimate, positionEstimate;
     public static double positionMeasurement, positionPrediction, estimateUncertainty, kalmanGain, betaGain, gammaGain, timeStep;
     public static double measurementVariance, measurementMaxRandDiff, placingVariance, placingMaxRandDiff, estimateUncertaintyRange, processNoise;
-    public static double residual, residualSum, residualSums, averageResidualSum, measurementResidual, measurementResidualSum, measurementResidualSums, averageMeasurementResidualSum;
+    public static double residual, residualSum, residualSums, measurementResidual, measurementResidualSum, measurementResidualSums, targetResidualSum;
     public static ArrayList<String[]> data = new ArrayList<String[]>();
     public static int iterations, runs;
     public static boolean goodData = false;
@@ -131,10 +131,12 @@ public class CombinedFilter {
             data.add(new String[] {String.valueOf(positionTrue), String.valueOf(positionEstimate), String.valueOf(positionPrediction),
                 String.valueOf(estimateUncertaintyRange), String.valueOf(kalmanGain), String.valueOf(positionMeasurement)});
         }
-        if ((residualSum - 0.185224) < 0.0001 && (residualSum - 0.185224) > -0.0001 && (measurementResidualSum - 0.25) < 0.0001 && (measurementResidualSum - 0.25) > -0.0001) { // change after tuning
-            WriteDataAtOnce("Output/BIGDATA.csv");
+        if ((residualSum - targetResidualSum) < 0.0001 && (residualSum - targetResidualSum) > -0.0001 && (measurementResidualSum - 0.25) < 0.0001 && (measurementResidualSum - 0.25) > -0.0001) { // change after tuning
+            writeDataAtOnce("Output/data.csv");
             goodData = true;
-            System.out.println("residualSum = " + residualSum);
+            System.out.println("Residual Sum = " + residualSum);
+            System.out.println("Measurement Residual Sum = " + measurementResidualSum);
+            System.out.println("Filter Advantage = " + (100 - (residualSum / measurementResidualSum * 100)));
         };
         data.clear();
         residualSums += residualSum;
@@ -145,11 +147,6 @@ public class CombinedFilter {
         for (int i = 0; i < runs; i++) {
             if (!goodData) loop(iterations);
         }
-        averageResidualSum = residualSums / runs;
-        averageMeasurementResidualSum = measurementResidualSums / runs;
-        System.out.println("Average Measurement Residual Sum = " + averageMeasurementResidualSum);
-        System.out.println("Average Residual Sum = " + averageResidualSum);
-        System.out.println("Filter Advantage = " + (100 - (averageResidualSum / averageMeasurementResidualSum * 100)));
     }
 
     public static void getInput() {
@@ -162,6 +159,7 @@ public class CombinedFilter {
         timeStep = 0.02;
         iterations = 50;
         runs = 10000000; // 10 million
+        targetResidualSum = 0.185224;
     }
 
     public static void main(String args[]) {
