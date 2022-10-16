@@ -1,3 +1,7 @@
+import com.opencsv.CSVWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Random;
 import java.lang.Math;
 import java.util.ArrayList;
@@ -9,7 +13,22 @@ public class CombinedFilter {
     public static double positionMeasurement, positionPrediction, estimateUncertainty, kalmanGain, betaGain, gammaGain, timeStep;
     public static double measurementVariance, measurementMaxRandDiff, placingVariance, placingMaxRandDiff, estimateUncertaintyRange, processNoise;
     public static double residual, residualSum, residualSums, averageResidualSum, measurementResidual, measurementResidualSum, measurementResidualSums, averageMeasurementResidualSum;
+    public static ArrayList<String[]> data = new ArrayList<String[]>();
     public static int iterations, runs;
+    public static boolean goodData = false;
+
+    public static void writeDataAtOnce(String filePath)
+    {
+        File file = new File(filePath);
+
+        try {
+            FileWriter outputfile = new FileWriter(file);
+            CSVWriter writer = new CSVWriter(outputfile);
+            writer.writeAll(data);
+            writer.close();
+        }
+        catch (IOException e) {e.printStackTrace();}
+    }
 
     public static double fixDouble(double input) {return Math.round(input * 1000000000000000d) / 1000000000000000d;}
 
@@ -81,6 +100,9 @@ public class CombinedFilter {
 
         positionPrediction = predictPosition(accelEstimate, velocityEstimate, positionEstimate);
         estimateUncertainty = uncertaintyExtrapolation(processNoise, estimateUncertainty);
+
+        data.add(new String[] {String.valueOf(positionTrue), String.valueOf(positionEstimate), String.valueOf(positionPrediction),
+            String.valueOf(estimateUncertaintyRange), String.valueOf(kalmanGain), String.valueOf(positionMeasurement)});
     }
 
     public static void loop(int iterations) {
@@ -106,14 +128,22 @@ public class CombinedFilter {
 
             estimateUncertaintyRange = Math.sqrt(estimateUncertainty) * 3;
             positionTrue = fixDouble(positionTrue);
+            data.add(new String[] {String.valueOf(positionTrue), String.valueOf(positionEstimate), String.valueOf(positionPrediction),
+                String.valueOf(estimateUncertaintyRange), String.valueOf(kalmanGain), String.valueOf(positionMeasurement)});
         }
+        if ((residualSum - 0.185224) < 0.0001 && (residualSum - 0.185224) > -0.0001 && (measurementResidualSum - 0.25) < 0.0001 && (measurementResidualSum - 0.25) > -0.0001) { // change after tuning
+            WriteDataAtOnce("Output/BIGDATA.csv");
+            goodData = true;
+            System.out.println("residualSum = " + residualSum);
+        };
+        data.clear();
         residualSums += residualSum;
         measurementResidualSums += measurementResidualSum;
     }
 
     public static void loopRepeat(int runs) {
         for (int i = 0; i < runs; i++) {
-            loop(iterations);
+            if (!goodData) loop(iterations);
         }
         averageResidualSum = residualSums / runs;
         averageMeasurementResidualSum = measurementResidualSums / runs;
